@@ -1,0 +1,5 @@
+<library path="bonxai_display">
+  <class type="bonxai_ros::BonxaiDisplay" base_class_type="rviz_common::MessageFilterDisplay">
+    <description>Display for BonxaiVoxelMap messages.</description>
+  </class>
+</library>

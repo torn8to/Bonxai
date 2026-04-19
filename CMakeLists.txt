@@ -61,11 +61,20 @@ if ( ament_cmake_FOUND )
     ament_auto_find_build_dependencies()
 
     find_package(std_srvs REQUIRED)
+    find_package(rosidl_default_generators REQUIRED)
+
+    rosidl_generate_interfaces(${PROJECT_NAME}
+      "bonxai_ros/msg/BonxaiVoxelMap.msg"
+      DEPENDENCIES std_msgs
+    )
 
     include_directories(bonxai_ros/include 3rdparty)
 
     ament_auto_add_library(bonxai_server SHARED
       bonxai_ros/src/bonxai_server.cpp
+    )
+    rosidl_target_interfaces(bonxai_server
+      ${PROJECT_NAME} "rosidl_typesupport_cpp"
     )
 
     target_link_libraries(bonxai_server
@@ -78,6 +87,25 @@ if ( ament_cmake_FOUND )
       PLUGIN "bonxai_server::BonxaiServer"
       EXECUTABLE bonxai_server_node
     )
+
+    # --- RViz Plugin ---
+    set(CMAKE_AUTOMOC ON)
+    find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+
+    ament_auto_add_library(bonxai_display SHARED
+      bonxai_ros/include/bonxai_display.hpp
+      bonxai_ros/src/bonxai_display.cpp
+    )
+
+    rosidl_target_interfaces(bonxai_display
+      ${PROJECT_NAME} "rosidl_typesupport_cpp"
+    )
+
+    target_link_libraries(bonxai_display
+      Qt5::Widgets
+    )
+
+    pluginlib_export_plugin_description_file(rviz_common rviz_common_plugins.xml)
 
     ament_auto_package(
       INSTALL_TO_SHARE
