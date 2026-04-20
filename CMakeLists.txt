@@ -73,11 +73,10 @@ if ( ament_cmake_FOUND )
     ament_auto_add_library(bonxai_server SHARED
       bonxai_ros/src/bonxai_server.cpp
     )
-    rosidl_target_interfaces(bonxai_server
-      ${PROJECT_NAME} "rosidl_typesupport_cpp"
-    )
+    rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 
     target_link_libraries(bonxai_server
+      "${cpp_typesupport_target}"
       bonxai_map
       ${PCL_LIBRARIES}
       ${std_srvs_TARGETS}
@@ -97,21 +96,21 @@ if ( ament_cmake_FOUND )
       bonxai_ros/src/bonxai_display.cpp
     )
 
-    rosidl_target_interfaces(bonxai_display
-      ${PROJECT_NAME} "rosidl_typesupport_cpp"
-    )
+    rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 
     target_link_libraries(bonxai_display
+      "${cpp_typesupport_target}"
       Qt5::Widgets
     )
 
-    pluginlib_export_plugin_description_file(rviz_common rviz_common_plugins.xml)
+    pluginlib_export_plugin_description_file(rviz_common bonxai_rviz_plugins.xml)
 
     ament_auto_package(
       INSTALL_TO_SHARE
       bonxai_ros/launch
       bonxai_ros/rviz
       bonxai_ros/params
+      bonxai_ros/icons
     )
 
 else()

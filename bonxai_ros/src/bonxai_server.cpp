@@ -115,6 +115,7 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
 
   auto qos = latched_topics_ ? rclcpp::QoS{1}.transient_local() : rclcpp::QoS{1};
   point_cloud_pub_ = create_publisher<PointCloud2>("bonxai_point_cloud_centers", qos);
+  voxel_map_pub_ = create_publisher<BonxaiVoxelMap>("bonxai_voxel_map", qos);
 
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -123,7 +124,7 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 
   using std::chrono_literals::operator""s;
-  point_cloud_sub_.subscribe(this, "cloud_in", rclcpp::SensorDataQoS());
+  point_cloud_sub_.subscribe(this, "cloud_in", rclcpp::SensorDataQoS().get_rmw_qos_profile());
   tf_point_cloud_sub_ = std::make_shared<tf2_ros::MessageFilter<PointCloud2>>(
       point_cloud_sub_, *tf2_buffer_, world_frame_id_, 5, this->get_node_logging_interface(),
       this->get_node_clock_interface(), 5s);
@@ -217,8 +218,12 @@ rcl_interfaces::msg::SetParametersResult BonxaiServer::onParameter(
 void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
   const auto start_time = rclcpp::Clock{}.now();
   thread_local std::vector<Eigen::Vector3d> bonxai_result;
+  thread_local std::vector<Bonxai::CoordT> bonxai_coords;
   bonxai_result.clear();
+  bonxai_coords.clear();
+
   bonxai_->getOccupiedVoxels(bonxai_result);
+  bonxai_->getOccupiedVoxels(bonxai_coords);
 
   if (bonxai_result.size() <= 1) {
     RCLCPP_WARN(get_logger(), "Nothing to publish, bonxai is empty");
@@ -228,6 +233,11 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
   bool publish_point_cloud =
       (latched_topics_ || point_cloud_pub_->get_subscription_count() +
                                   point_cloud_pub_->get_intra_process_subscription_count() >
+                              0);
+
+  bool publish_voxel_map =
+      (latched_topics_ || voxel_map_pub_->get_subscription_count() +
+                                  voxel_map_pub_->get_intra_process_subscription_count() >
                               0);
 
   // init pointcloud for occupied space:
@@ -247,6 +257,25 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
     cloud.header.stamp = rostime;
     point_cloud_pub_->publish(cloud);
     RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
+  }
+
+  if (publish_voxel_map) {
+    bonxai_ros::msg::BonxaiVoxelMap bonxai_voxel_map;
+    bonxai_voxel_map.header.frame_id = world_frame_id_;
+    bonxai_voxel_map.header.stamp = rostime;
+    bonxai_voxel_map.voxel_resolution = res_;
+    bonxai_voxel_map.num_points = bonxai_coords.size();
+
+    bonxai_voxel_map.data.reserve(bonxai_coords.size() * 3);
+    for (const auto& voxel : bonxai_coords) {
+      bonxai_voxel_map.data.push_back(voxel.x);
+      bonxai_voxel_map.data.push_back(voxel.y);
+      bonxai_voxel_map.data.push_back(voxel.z);
+    }
+
+    voxel_map_pub_->publish(bonxai_voxel_map);
+    RCLCPP_INFO(
+        get_logger(), "Published occupancy voxel map with %u voxels", bonxai_voxel_map.num_points);
   }
 }
 

@@ -3,14 +3,14 @@
 
 #include <memory>
 #include <rviz_common/message_filter_display.hpp>
-#include <rviz_rendering/objects/shape.hpp>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
+#include <rviz_common/properties/float_property.hpp>
+#include <rviz_rendering/objects/point_cloud.hpp>
 #include <vector>
 
 #include "bonxai_ros/msg/bonxai_voxel_map.hpp"
-
-#include <rviz_common/properties/color_property.hpp>
-#include <rviz_common/properties/float_property.hpp>
-#include <rviz_common/properties/bool_property.hpp>
 
 namespace bonxai_ros {
 class BonxaiDisplay : public rviz_common::MessageFilterDisplay<bonxai_ros::msg::BonxaiVoxelMap> {
@@ -26,12 +26,14 @@ class BonxaiDisplay : public rviz_common::MessageFilterDisplay<bonxai_ros::msg::
   void onInitialize() override;
   void processMessage(bonxai_ros::msg::BonxaiVoxelMap::ConstSharedPtr msg) override;
 
-  std::vector<std::unique_ptr<rviz_rendering::Shape>> cubes_;
+  std::unique_ptr<rviz_rendering::PointCloud> cloud_;
+  rviz_common::properties::BoolProperty* dynamic_range_property_;
   rviz_common::properties::ColorProperty* color_property_;
   rviz_common::properties::FloatProperty* alpha_property_;
-  rviz_common::properties::BoolProperty* use_z_color_property_;
-  rviz_common::properties::FloatProperty* min_z_property_;
-  rviz_common::properties::FloatProperty* max_z_property_;
+  rviz_common::properties::EnumProperty* color_mode_property_;
+  rviz_common::properties::FloatProperty* min_value_property_;
+  rviz_common::properties::FloatProperty* max_value_property_;
+  bonxai_ros::msg::BonxaiVoxelMap::ConstSharedPtr last_msg_;
 };
 }  // namespace bonxai_ros
 

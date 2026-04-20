@@ -27,8 +27,11 @@
 #include "tf2_ros/message_filter.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
+#include "bonxai_ros/msg/bonxai_voxel_map.hpp"
+
 namespace bonxai_server {
 
+using bonxai_ros::msg::BonxaiVoxelMap;
 using sensor_msgs::msg::PointCloud2;
 
 class BonxaiServer : public rclcpp::Node {
@@ -53,6 +56,7 @@ class BonxaiServer : public rclcpp::Node {
   rcl_interfaces::msg::SetParametersResult onParameter(
       const std::vector<rclcpp::Parameter>& parameters);
 
+  rclcpp::Publisher<BonxaiVoxelMap>::SharedPtr voxel_map_pub_;
   rclcpp::Publisher<PointCloud2>::SharedPtr point_cloud_pub_;
   message_filters::Subscriber<PointCloud2> point_cloud_sub_;
   std::shared_ptr<tf2_ros::MessageFilter<PointCloud2>> tf_point_cloud_sub_;
