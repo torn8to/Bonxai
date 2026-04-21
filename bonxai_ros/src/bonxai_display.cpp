@@ -1,17 +1,5 @@
 #include "bonxai_display.hpp"
 
-#include <OgreSceneManager.h>
-#include <OgreSceneNode.h>
-#include <OgreVector3.h>
-
-#include <rclcpp/rclcpp.hpp>
-#include <rviz_common/display_context.hpp>
-#include <rviz_common/frame_manager_iface.hpp>
-#include <rviz_common/properties/bool_property.hpp>
-#include <rviz_common/properties/color_property.hpp>
-#include <rviz_common/properties/enum_property.hpp>
-#include <rviz_common/properties/float_property.hpp>
-
 namespace bonxai_ros {
 
 BonxaiDisplay::BonxaiDisplay() {
@@ -22,7 +10,8 @@ BonxaiDisplay::BonxaiDisplay() {
       "Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this, SLOT(updateStyle()));
 
   dynamic_range_property_ = new rviz_common::properties::BoolProperty(
-      "Dynamic Range", false, "Scale coloring based on the maximum Z in the data.", this, SLOT(updateStyle()));
+      "Dynamic Range", false, "Scale coloring based on the maximum Z in the data.", this,
+      SLOT(updateStyle()));
 
   color_mode_property_ = new rviz_common::properties::EnumProperty(
       "Color Mode", "Z Axis", "Select coloring mode.", this, SLOT(updateStyle()));
@@ -88,22 +77,26 @@ void BonxaiDisplay::processMessage(bonxai_ros::msg::BonxaiVoxelMap::ConstSharedP
   if (dynamic_range_property_->getBool() && num_pts > 0) {
     float sensor_max_z = -std::numeric_limits<float>::infinity();
     for (uint32_t i = 0; i < num_pts; ++i) {
-      if (i * 3 + 2 >= message->data.size()) break;
+      if (i * 3 + 2 >= message->data.size())
+        break;
       float z = message->data[i * 3 + 2] * res;
-      if (z > sensor_max_z) sensor_max_z = z;
+      if (z > sensor_max_z)
+        sensor_max_z = z;
     }
     if (sensor_max_z > -std::numeric_limits<float>::infinity()) {
       max_val = sensor_max_z;
     }
   }
 
-  if (max_val == min_val) max_val = min_val + 0.001f;
+  if (max_val == min_val)
+    max_val = min_val + 0.001f;
 
   std::vector<rviz_rendering::PointCloud::Point> points;
   points.reserve(num_pts);
 
   for (uint32_t i = 0; i < num_pts; ++i) {
-    if (i * 3 + 2 >= message->data.size()) break;
+    if (i * 3 + 2 >= message->data.size())
+      break;
 
     int32_t vx = message->data[i * 3 + 0];
     int32_t vy = message->data[i * 3 + 1];
